@@ -112,9 +112,9 @@ alias chef-solo=cinc-solo
         >   1. The `enable` function defines/calls a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`.
         >   1. The `disable` function is not yet defined, but we will define that later.
 
-        If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`.
+    1. If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`.
 
-        Why is it `0/1 resources updated` again? It's because the `template` resource is _idempotent_.
+        > Why is it `0/1 resources updated` again? It's because the `template` resource is _idempotent_.
 
         > **What is idempotence?**
         >
