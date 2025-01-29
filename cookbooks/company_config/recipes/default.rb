@@ -1,0 +1,1 @@
+node.default['cpe_touchid']['manage'] = true
