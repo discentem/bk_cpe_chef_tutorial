@@ -48,7 +48,7 @@ alias chef-solo=cinc-solo
 
     Nothing happened yet (`0/1 resources updated`)!
 
-1. But if we create a file at `/Users/shared/manage_touchid`, then TouchID for sudo should be enabled!
+1. But if we create a file at `/Users/Shared/manage_touchid`, then TouchID for sudo should be enabled!
     1. Run `chef-solo` again
 
         ```
@@ -84,7 +84,8 @@ alias chef-solo=cinc-solo
 
 
         > **Let's pause for a minute and walk through what happened**:
-        > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff.
+        > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff. See [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb). We set `node.default['cpe_touchid']['manage'] = true` and `node.default['cpe_touchid']['enable'] = true`.
+
         > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code (which is also reproduced below).
         >   1. The `default_action` for this [_Chef resource_](https://docs.chef.io/resource/) is `:manage`. So the code goes to the `action :manage` block.
         >   2. Inside `action :manage` there are these lines:
@@ -133,5 +134,7 @@ alias chef-solo=cinc-solo
     > Woo! You've made it this far! Let's make this more complicated.
 
 #### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['enable']` is `false`
+
+Implement the disable function so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is disabled.
 
 #### Goal 3: Creating dynamic json files from node attributes
