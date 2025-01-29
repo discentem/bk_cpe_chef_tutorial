@@ -29,7 +29,7 @@ alias chef-solo=cinc-solo
 1. Run `chef-solo` with quickstart.json from the root of this repository:
 
     ```
-    sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks
+    sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks --force-formatter
     ```
 
     This should produce output which contains the following:
@@ -44,24 +44,15 @@ alias chef-solo=cinc-solo
     Infra Phase complete, 0/1 resources updated in 04 seconds
     ```
 
-    So what happened? 
-    
+    So what happened?
+
     Nothing happened yet (`0/1 resources updated`)!
-    
-1. But if we change `node.default['cpe_touchid']['manage'] = false` in [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb) to `true`, then touch id for sudo should be enabled!
 
-    1. Change `node.default['cpe_touchid']['manage']` to be `true`:
-
-        ```diff
-        # cookbooks/company_config/recipes/default.rb
-        - node.default['cpe_touchid']['manage'] = false
-        + node.defualt['cpe_touchid]['manage'] = true
-        ``` 
-
-    1. Run `chef-solo` again:
+1. But if we create a file at `/Users/shared/manage_touchid`, then TouchID for sudo should be enabled!
+    1. Run `chef-solo` again
 
         ```
-        sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks
+        sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks --force-formatter
         ```
 
         Check the output to see what happened.
@@ -96,12 +87,14 @@ alias chef-solo=cinc-solo
         > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff.
         > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code (which is also reproduced below).
         >   1. The `default_action` for this [_Chef resource_](https://docs.chef.io/resource/) is `:manage`. So the code goes to the `action :manage` block.
-        >   2. Inside `action :manage` there is this line:
+        >   2. Inside `action :manage` there are these lines:
         >       ```ruby
-        >       manage if node['cpe_touchid']['manage']
+        >       enable if node['cpe_touchid']['manage'] && node['cpe_touchid']['enable']
+        >       disable if node['cpe_touchid']['manage'] && !node['cpe_touchid']['enable']
         >       ```
-        >       This ruby code is evaluated as true. Thus the function defined below, `manage`, is called.
-        >   3. `manage` defines a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`. 
+        >       If we are managing TouchID and `enable` is true, we call the `enable` function. If we are managing TouchID and `enable` is false, we call the `disable` function.
+        >   3. The `enable` function defines/calls a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`.
+        >   4. The `disable` function is not yet defined, but we will define that later.
 
 
         ```ruby
@@ -124,14 +117,14 @@ alias chef-solo=cinc-solo
         end
         ```
 
-        If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`. 
+        If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`.
 
         Why is it `0/1 resources updated` again? It's because the `template` resource is _idempotent_.
-        
+
         > **What is idempotence?**
-        > 
+        >
         > In Chef, idempotence refers to the property where running the same Chef recipe multiple times results in the same system state, without causing unintended side effects.
-        > 
+        >
         > **How Idempotence Works in Chef**
         > - Check Before Change: Chef resources (like file, package, service) first check the system's current state before making any changes.
         > - Apply Only If Needed: If the system is already in the desired state, Chef does nothing; otherwise, it makes the necessary changes.
@@ -139,13 +132,6 @@ alias chef-solo=cinc-solo
 
     > Woo! You've made it this far! Let's make this more complicated.
 
-#### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['manage']` is `false`
+#### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['enable']` is `false`
 
 #### Goal 3: Creating dynamic json files from node attributes
-
-
-
-
-
-
-

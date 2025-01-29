@@ -6,12 +6,13 @@ provides :cpe_touchid_configure, :os => 'darwin'
 default_action :manage
 
 action :manage do
-  manage if node['cpe_touchid']['manage']
+  enable if node['cpe_touchid']['manage'] && node['cpe_touchid']['enable']
+  disable if node['cpe_touchid']['manage'] && !node['cpe_touchid']['enable']
 end
 
 action_class do
   # https://dev.to/siddhantkcode/enable-touch-id-authentication-for-sudo-on-macos-sonoma-14x-4d28
-  def manage
+  def enable
     # https://docs.chef.io/resources/template/
     template '/etc/pam.d/sudo_local' do
         source 'sudo_local.erb'
@@ -20,5 +21,8 @@ action_class do
         mode '0644'
         action :create
     end
+  end
+  def disable
+     # pass
   end
 end
