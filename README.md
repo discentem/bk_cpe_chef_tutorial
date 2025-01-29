@@ -22,6 +22,8 @@ alias chef-solo=cinc-solo
 
 ### Tutorial
 
+> **Tip** on how to use this tutorial: Follow each link and read through the content. This will give important context about various concepts within Chef.
+
 #### Goal #1: Enable TouchID for sudo
 
 1. Run `chef-solo` with quickstart.json from the root of this repository:
@@ -84,9 +86,23 @@ alias chef-solo=cinc-solo
         Running handlers complete
         Infra Phase complete, 2/2 resources updated in 06 seconds
         ```
-        > Let's pause for a minute and walk through what happened:
-        > - We changed a `node` attribute* (aka a feature flag) which causes `cpe_touchid` to change stuff.
-        > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code: 
+
+        If you try to use `sudo` in a Terminal now, you'll be prompted to use TouchID instead of your password. Neato!
+
+        ![](pictures/touchid_prompt_for_sudo.png)
+
+
+        > **Let's pause for a minute and walk through what happened**:
+        > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff.
+        > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code (which is also reproduced below).
+        >   1. The `default_action` for this [_Chef resource_](https://docs.chef.io/resource/) is `:manage`. So the code goes to the `action :manage` block.
+        >   2. Inside `action :manage` there is this line:
+        >       ```ruby
+        >       manage if node['cpe_touchid']['manage']
+        >       ```
+        >       This ruby code is evaluated as true. Thus the function defined below, `manage`, is called.
+        >   3. `manage` defines a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`. 
+
 
         ```ruby
         default_action :manage
@@ -97,7 +113,6 @@ alias chef-solo=cinc-solo
 
         action_class do
             def manage
-                # https://docs.chef.io/resources/template/
                 template '/etc/pam.d/sudo_local' do
                     source 'sudo_local.erb'
                     owner 'root'
@@ -109,7 +124,24 @@ alias chef-solo=cinc-solo
         end
         ```
 
+        If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`. 
 
+        Why is it `0/1 resources updated` again? It's because the `template` resource is _idempotent_.
+        
+        > **What is idempotence?**
+        > 
+        > In Chef, idempotence refers to the property where running the same Chef recipe multiple times results in the same system state, without causing unintended side effects.
+        > 
+        > **How Idempotence Works in Chef**
+        > - Check Before Change: Chef resources (like file, package, service) first check the system's current state before making any changes.
+        > - Apply Only If Needed: If the system is already in the desired state, Chef does nothing; otherwise, it makes the necessary changes.
+        > - Consistent Results: Running the recipe multiple times should not change the system beyond the initial intended configuration.
+
+    > Woo! You've made it this far! Let's make this more complicated.
+
+#### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['manage']` is `false`
+
+#### Goal 3: Creating dynamic json files from node attributes
 
 
 
