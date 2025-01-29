@@ -135,6 +135,6 @@ alias chef-solo=cinc-solo
 
 #### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['enable']` is `false`
 
-Implement the disable function so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is disabled.
+Implement the disable function in [cookbooks/](cookbooks/cpe_touchid/resources/cpe_touchid.rb) so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is disabled.
 
 #### Goal 3: Creating dynamic json files from node attributes
