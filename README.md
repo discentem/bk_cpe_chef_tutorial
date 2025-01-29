@@ -85,17 +85,32 @@ alias chef-solo=cinc-solo
 
         > **Let's pause for a minute and walk through what happened**:
         > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff. See [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb). We set `node.default['cpe_touchid']['manage'] = true` and `node.default['cpe_touchid']['enable'] = true`.
-
-        > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code (which is also reproduced below).
-        >   1. The `default_action` for this [_Chef resource_](https://docs.chef.io/resource/) is `:manage`. So the code goes to the `action :manage` block.
-        >   2. Inside `action :manage` there are these lines:
+        > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code.
+        >   1. The `chef-solo` command we ran references [quickstart.json](quickstart.json). This file defines a runlist for Chef.
+        >       ```json
+        >       {
+        >            "minimal_ohai" : true,
+        >            "run_list": [
+        >               "recipe[cpe_init]" # equivalent to recipe[cpe_init::default]
+        >            ]
+        >        }
+        >       ```
+        >       Chef interprets this runlist by looking in the configured cookbook directory at the `cpe_init` cookbook and looking for [cookbooks/cpe_init/recipes/default.rb](cookbooks/cpe_init/recipes/default.rb).
+        >   1. Inside this recipe, two more recipes are called: `company_config` and `cpe_touchid`.
+        >      - `company_config`, as we've seen simply sets some node attributes.
+            >      - `cpe_touchid` consumes the node attributes and executes stuff based on their ate.
+        >   1. In [cookbooks/cpe_touchid/recipes/default.rb](/cookbooks/cpe_touchid/recipes/default.rb) we simply see `cpe_touchid_configure 'Configure TouchID'` with no arguments/attributes. To figure what's happening here we have to look at the source code for this resource: [cookbooks/cpe_touchid/resources/cpe_touchid.rb](cookbooks/cpe_touchid/resources/cpe_touchid.rb)
+        >   1. The default action, `default_action :manage`, is `manage`, so we look inside `action :manage` there are these lines:
         >       ```ruby
         >       enable if node['cpe_touchid']['manage'] && node['cpe_touchid']['enable']
         >       disable if node['cpe_touchid']['manage'] && !node['cpe_touchid']['enable']
         >       ```
-        >       If we are managing TouchID and `enable` is true, we call the `enable` function. If we are managing TouchID and `enable` is false, we call the `disable` function.
-        >   3. The `enable` function defines/calls a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`.
-        >   4. The `disable` function is not yet defined, but we will define that later.
+        >       If we are managing TouchID and `enable` is true, we call the `enable` function.
+        >
+        >       If we are managing TouchID and `enable` is false, we call the `disable` function.
+        >
+        >   1. The `enable` function defines/calls a template resource (see [https://docs.chef.io/resources/template/](https://docs.chef.io/resources/template/)) which creates `/etc/pam.d/sudo_local`, if doesn't yet exist, using the [erb template](https://github.com/ruby/erb) defined in `cpe_touchid/templates/default/sudo_local.rb`.
+        >   1. The `disable` function is not yet defined, but we will define that later.
 
         If you run `sudo chef-solo -z -j quickstart.json --config-option cookbook_path=cookbooks` again, you should see `Infra Phase complete, 0/1 resources updated in 04 seconds`.
 
@@ -114,6 +129,10 @@ alias chef-solo=cinc-solo
 
 #### Goal 2: Delete `/etc/pam.d/sudo_local` if `node['cpe_touchid']['enable']` is `false`
 
-Implement the disable function in [cookbooks/](cookbooks/cpe_touchid/resources/cpe_touchid.rb) so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is disabled.
+1. Implement the disable function in [cookbooks/cpe_touchid/resources/cpe_touchid.rb](cookbooks/cpe_touchid/resources/cpe_touchid.rb) so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is deleted.
+
+> **Note**: Implementing deletion through `node['cpe_touchid']['enable'] = false` instead of introducing `node['cpe_touchid']['disable'] = true` has an important benefit:
+> - We can simply erase code which has the side effect of deleting files on disk because the default value for `node['cpe_touchid']['enable']` is `false`. This default is set in [cookbooks/cpe_touchid/attributes/default.rb](cookbooks/cpe_touchid/attributes/default.rb).
+> - We don't have to go back later and clean up orphaned code that isn't needed anymore. We would otherwise have to go back and cleanup explicit deletion code.
 
 #### Goal 3: Creating dynamic json files from node attributes
