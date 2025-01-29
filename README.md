@@ -85,7 +85,7 @@ alias chef-solo=cinc-solo
 
         > **Let's pause for a minute and walk through what happened**:
         > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff. See [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb). We set `node.default['cpe_touchid']['manage'] = true` and `node.default['cpe_touchid']['enable'] = true`.
-        > - Why does this cause `cpe_touchid` to get activated? Take a look at [the cpe_touchid resource](cookbooks/cpe_touchid/resources/cpe_touchid.rb) source code.
+        > - Why does this cause `cpe_touchid` to get activated?
         >   1. The `chef-solo` command we ran references [quickstart.json](quickstart.json). This file defines a runlist for Chef.
         >       ```jsonc
         >       {
@@ -131,8 +131,8 @@ alias chef-solo=cinc-solo
 
 1. Implement the disable function in [cookbooks/cpe_touchid/resources/cpe_touchid.rb](cookbooks/cpe_touchid/resources/cpe_touchid.rb) so that if `node['cpe_touchid']['enable']` is `false`, `/etc/pam.d/sudo_local` is deleted.
 
-> **Note**: Implementing deletion through `node['cpe_touchid']['enable'] = false` instead of introducing `node['cpe_touchid']['disable'] = true` has an important benefit:
-> - We can simply erase code which has the side effect of deleting files on disk because the default value for `node['cpe_touchid']['enable']` is `false`. This default is set in [cookbooks/cpe_touchid/attributes/default.rb](cookbooks/cpe_touchid/attributes/default.rb).
-> - We don't have to go back later and clean up orphaned code that isn't needed anymore. We would otherwise have to go back and cleanup explicit deletion code.
+    > **Note**: Implementing deletion through `node['cpe_touchid']['enable'] = false` instead of introducing `node['cpe_touchid']['disable'] = true` has an important benefit:
+    > - We can simply erase code which has the side effect of deleting files on disk because the default value for `node['cpe_touchid']['enable']` is `false`. This default is set in [cookbooks/cpe_touchid/attributes/default.rb](cookbooks/cpe_touchid/attributes/default.rb).
+    > - We don't have to go back later and clean up orphaned code that isn't needed anymore. We would otherwise have to go back and cleanup explicit deletion code.
 
 #### Goal 3: Creating dynamic json files from node attributes
