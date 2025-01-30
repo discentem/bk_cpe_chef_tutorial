@@ -174,23 +174,24 @@ end
         # if we delete this file, we'll turn off touchid
         if ::File.exist?('/Users/Shared/manage_touchid')
             node.default['cpe_touchid']['enable'] = true
-            node.default['cpe_touchid']['remote_config'] = 'http://localhost:8000/sudo_local'
+            node.default['cpe_touchid']['remote_config'] = 'http://localhost:8000/sudo_local.erb'
         end
     ```
 
 
     ```ruby
-        # cookbooks/cpe_touchid/resources/cpe_touchid.rb
+    # cookbooks/cpe_touchid/resources/cpe_touchid.rb
         ...
-        def enable
-        remote_file '/etc/pam.d/sudo_local' do
-            source node['cpe_touchid']['remote_config']
-            owner 'root'
-            group 'wheel'
-            mode '0644'
-            action :create
-            only_if { !node['cpe_touchid']['remote_config'].nil? }
-            ignore_failure true
+    def enable
+        if node['cpe_touchid']['remote_config']
+            remote_file '/etc/pam.d/sudo_local' do
+                source node['cpe_touchid']['remote_config']
+                owner 'root'
+                group 'wheel'
+                mode '0644'
+                action :create
+                ignore_failure true
+            end
         end
 
         # https://docs.chef.io/resources/template/
@@ -200,7 +201,6 @@ end
             group 'wheel'
             mode '0644'
             action :create
-            not_if { node['cpe_touchid']['remote_config'].nil? }
         end
     end
     ...
