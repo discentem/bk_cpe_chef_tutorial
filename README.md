@@ -135,4 +135,21 @@ alias chef-solo=cinc-solo
     > - We can simply erase code which has the side effect of deleting files on disk because the default value for `node['cpe_touchid']['enable']` is `false`. This default is set in [cookbooks/cpe_touchid/attributes/default.rb](cookbooks/cpe_touchid/attributes/default.rb).
     > - We don't have to go back later and clean up orphaned code that isn't needed anymore. We would otherwise have to go back and cleanup explicit deletion code.
 
+Don't cheat! But one possible solution is this:
+
+<body>
+<details>
+<summary><-- Click to unhide the solution</h3></summary>
+
+```ruby
+def disable
+    file '/etc/pam.d/sudo_local' do
+      action :delete
+    end
+end
+```
+
+</details>
+</body>
+
 #### Goal 3: Creating dynamic json files from node attributes
