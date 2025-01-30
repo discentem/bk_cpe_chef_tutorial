@@ -139,7 +139,7 @@ Don't cheat! But one possible solution is this:
 
 <body>
 <details>
-<summary><-- Click to unhide the solution</h3></summary>
+<summary><-- Click to unhide one possible solution</h3></summary>
 
 ```ruby
 def disable
@@ -152,4 +152,62 @@ end
 </details>
 </body>
 
-#### Goal 3: Creating dynamic json files from node attributes
+#### Goal 3: Retrieve the template for `/etc/pam.d/sudo_local` from a remote webserver
+
+##### Part A
+
+1. Start a webserver that serves the [fancy_webserver](fancy_webserver/) directory. You can use `python3 -m http.server -d fancy_webserver`.
+1. Modify the `cpe_touchid` resource to _try_ to retrieve `sudo_local.erb` from a webserver if `node['cpe_touchid']['remote_config']` has a value.
+    - If retrieving the file fails, ignore the failure and fallback to using the local `sudo_local.erb`.
+    > Tips: 
+    > - You can assume that the local `sudo_local.erb` and the remote `sudo_local.erb` have exactly the same content.
+    > - This probably requires utilizing the [remote_file](https://docs.chef.io/resources/remote_file/) resource and [only_if](https://docs.chef.io/resource_common/#properties-1), which is common functionality among all Chef resources.
+
+    <body>
+    <details>
+    <summary><-- Don't cheat! But once you are ready to check your answer, you can unhide one possible solution.</summary>
+
+    ```ruby
+        # cookbooks/company_config/recipes/default.rb
+        # always manage touchid
+        node.default['cpe_touchid']['manage'] = true
+        # if we delete this file, we'll turn off touchid
+        if ::File.exist?('/Users/Shared/manage_touchid')
+            node.default['cpe_touchid']['enable'] = true
+            node.default['cpe_touchid']['remote_config'] = 'http://localhost:8000/sudo_local'
+        end
+    ```
+
+
+    ```ruby
+        # cookbooks/cpe_touchid/resources/cpe_touchid.rb
+        ...
+        def enable
+        remote_file '/etc/pam.d/sudo_local' do
+            source node['cpe_touchid']['remote_config']
+            owner 'root'
+            group 'wheel'
+            mode '0644'
+            action :create
+            only_if { !node['cpe_touchid']['remote_config'].nil? }
+            ignore_failure true
+        end
+
+        # https://docs.chef.io/resources/template/
+        template '/etc/pam.d/sudo_local' do
+            source 'sudo_local.erb'
+            owner 'root'
+            group 'wheel'
+            mode '0644'
+            action :create
+            not_if { node['cpe_touchid']['remote_config'].nil? }
+        end
+    end
+    ...
+    ```
+
+    </details>
+    </body>
+
+##### Part B
+
