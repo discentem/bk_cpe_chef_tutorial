@@ -2,7 +2,7 @@
 
 ## Who is this tutorial for?
 
-- Anyone who wants to learn how Facebook's way to use Chef. But particularly [Client Platform Engineers](https://kanenarraway.com/posts/client-platform-engineering/) who are new to Chef.
+- Anyone who wants to learn Facebook's way to use Chef. But particularly [Client Platform Engineers](https://kanenarraway.com/posts/client-platform-engineering/) who are new to Chef.
 
 ## Background
 
@@ -159,7 +159,7 @@ end
 1. Start a webserver that serves the [fancy_webserver](fancy_webserver/) directory. You can use `python3 -m http.server -d fancy_webserver`.
 1. Modify the `cpe_touchid` resource to _try_ to retrieve `sudo_local.erb` from a webserver if `node['cpe_touchid']['remote_config']` has a value.
     - If retrieving the file fails, ignore the failure and fallback to using the local `sudo_local.erb`.
-    > Tips: 
+    > Tips:
     > - You can assume that the local `sudo_local.erb` and the remote `sudo_local.erb` have exactly the same content.
     > - This probably requires utilizing the [remote_file](https://docs.chef.io/resources/remote_file/) resource and [only_if](https://docs.chef.io/resource_common/#properties-1), which is common functionality among all Chef resources.
 
@@ -206,8 +206,13 @@ end
     ...
     ```
 
+    ###### Questions to consider
+    - Does this work if `node['cpe_touchid']['remote_config']` is not defined?
+    - Why should we do `if` here instead of `not_if` or `only_if`?
+
     </details>
     </body>
 
-##### Part B
 
+
+##### Part B
