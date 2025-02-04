@@ -135,11 +135,9 @@ alias chef-solo=cinc-solo
     > - We can simply erase code which has the side effect of deleting files on disk because the default value for `node['cpe_touchid']['enable']` is `false`. This default is set in [cookbooks/cpe_touchid/attributes/default.rb](cookbooks/cpe_touchid/attributes/default.rb).
     > - We don't have to go back later and clean up orphaned code that isn't needed anymore. We would otherwise have to go back and cleanup explicit deletion code.
 
-Don't cheat! But one possible solution is this:
-
 <body>
 <details>
-<summary><-- Click to unhide one possible solution</h3></summary>
+<summary><h3><-- Reveal only after you've solved or gotten stuck!</h3></summary>
 
 ```ruby
 def disable
@@ -161,11 +159,11 @@ end
     - If retrieving the file fails, ignore the failure and fallback to using the local `sudo_local.erb`.
     > Tips:
     > - You can assume that the local `sudo_local.erb` and the remote `sudo_local.erb` have exactly the same content.
-    > - This probably requires utilizing the [remote_file](https://docs.chef.io/resources/remote_file/) resource and [only_if](https://docs.chef.io/resource_common/#properties-1), which is common functionality among all Chef resources.
+    > - This probably requires utilizing the [remote_file](https://docs.chef.io/resources/remote_file/) resource with [only_if](https://docs.chef.io/resource_common/#properties-1).
 
     <body>
     <details>
-    <summary><-- Don't cheat! But once you are ready to check your answer, you can unhide one possible solution.</summary>
+    <summary><-- Reveal only after you've solved or gotten stuck!</summary>
 
     ```ruby
         # cookbooks/company_config/recipes/default.rb
@@ -209,7 +207,11 @@ end
     ###### Questions to consider
     - Does this work if `node['cpe_touchid']['remote_config']` is not defined?
     - Why should we do `if` here instead of `not_if` or `only_if`?
+    <body>
+    <details>
+    <summary><-- Reveal</summary>
 
+    Neither `not_if` nor `only_if` work here because in the compile phase of a Chef Run [see https://coderanger.net/two-pass/](https://coderanger.net/two-pass/) the `remote_file` resource object has to get instantiated but cannot if `node['cpe_touchid]['remote_config']` is not as `source` needs to be a string.
     </details>
     </body>
 
