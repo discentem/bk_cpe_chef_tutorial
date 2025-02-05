@@ -152,8 +152,6 @@ end
 
 #### Goal 3: Retrieve the template for `/etc/pam.d/sudo_local` from a remote webserver
 
-##### Part A
-
 1. Start a webserver that serves the [fancy_webserver](fancy_webserver/) directory. You can use `python3 -m http.server -d fancy_webserver`.
 1. Modify the `cpe_touchid` resource to _try_ to retrieve `sudo_local.erb` from a webserver if `node['cpe_touchid']['remote_config']` has a value.
     - If retrieving the file fails, ignore the failure and fallback to using the local `sudo_local.erb`.
@@ -206,6 +204,8 @@ end
 
     ###### Questions to consider
     - Does this work if `node['cpe_touchid']['remote_config']` is not defined?
+    - Does this still work if the content of the remote template and the local fallback are _different_? Keep in mind that we want to prefer the remote one over the local one.
+        - If it doesn't work when the templates are different, how can we make it work?
     - Why should we do `if` here instead of `not_if` or `only_if`?
     <body>
     <details>
@@ -217,4 +217,12 @@ end
 
 
 
-##### Part B
+#### Goal 4
+
+##### Part A
+
+1. Create a new cookbook that does the following:
+    - Retrieves [fancy_webserver/hello_world.py](fancy_webserver/hello_world.py) using Chef resources you learned about in previous exercises.
+    - Creates a launchdaemon using `fb_launchd` that runs [fancy_webserver/hello_world.py](fancy_webserver/hello_world.py) every few minutes or based on a watch path. See [cookbooks/fb_launchd/README.md](cookbooks/fb_launchd/README.md) for documentation on how to create launch daemons using this cookbook.
+    > Note: By default, this new cookbook shouldn't actually do anything as the default node attrbiutes that this new cookbook is concerned with should default to values that do not activate anything.
+1. Set the node attributes such that the above actions actually happen.
