@@ -84,7 +84,7 @@ alias chef-solo=cinc-solo
 
 
         > **Let's pause for a minute and walk through what happened**:
-        > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually potentially change stuff. See [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb). We set `node.default['cpe_touchid']['manage'] = true` and `node.default['cpe_touchid']['enable'] = true`.
+        > - We changed a `node` attribute* (think of this as a feature flag) which causes `cpe_touchid` to actually, potentially change stuff. See [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb). We set `node.default['cpe_touchid']['manage'] = true` and `node.default['cpe_touchid']['enable'] = true`.
         > - Why does this cause `cpe_touchid` to get activated?
         >   1. The `chef-solo` command we ran references [quickstart.json](quickstart.json). This file defines a runlist for Chef.
         >       ```jsonc
@@ -226,3 +226,23 @@ end
     - Creates a launchdaemon using `fb_launchd` that runs [fancy_webserver/hello_world.py](fancy_webserver/hello_world.py) every few minutes or based on a watch path. See [cookbooks/fb_launchd/README.md](cookbooks/fb_launchd/README.md) for documentation on how to create launch daemons using this cookbook.
     > Note: By default, this new cookbook shouldn't actually do anything as the default node attrbiutes that this new cookbook is concerned with should default to values that do not activate anything.
 1. Set the node attributes such that the above actions actually happen.
+
+
+#### Important Pattern
+
+Let's pause to discuss an emerging code pattern that you may have noticed.
+
+There are generally two types of cookbooks in Facebook's Chef model:
+
+1. cookbooks which read node attributes and define Chef resources based on those attributes and
+1. cookbooks which _only define/set/modify_ node attributes.
+
+> In other Chef codebases this explicit dicatomy doesn't exist; in those codebases it's considered acceptable to define resources in any recipe.
+
+**In Facebook-style Chef, resources should only be defined in this "second category" of cookbooks**:
+
+In this repo, we
+- set node attributes relating to touchid in [cookbooks/company_config/recipes/default.rb](cookbooks/company_config/recipes/default.rb) (no resource definitions!!) and
+- all of the resources that consume these node attributes are set in the relevant cookbook: e.g. [cookbooks/cpe_touchid](cookbooks/cpe_touchid/).
+
+> **For more info on this topic, read Facebook's own writing on the subject at [github.com/facebook/chef-cookbooks/README.md#apis](https://github.com/facebook/chef-cookbooks/blob/8fd7d577edaeb561d381e636e4e798538b8ab32a/README.md#apis)**.
