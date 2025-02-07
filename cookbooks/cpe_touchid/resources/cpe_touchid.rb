@@ -23,6 +23,8 @@ action_class do
     end
   end
   def disable
-    # pass
+    file '/etc/pam.d/sudo_local' do
+      action :delete
+    end
   end
 end
